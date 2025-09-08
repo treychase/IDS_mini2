@@ -1,0 +1,57 @@
+name: Run Baseball Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create mock data for testing
+      run: |
+        python -c "
+        import pandas as pd
+        import numpy as np
+        
+        # Create mock data with expected structure
+        np.random.seed(42)
+        n_samples = 1000
+        
+        data = {
+            'athlete_uid': [f'athlete_{i}' for i in range(n_samples)],
+            'test_date': pd.date_range('2023-01-01', periods=n_samples, freq='D'),
+            'pitch_speed_mph': np.random.normal(85, 10, n_samples),
+            'peak_elbow_flexion': np.random.normal(100, 15, n_samples),
+            'peak_shoulder_rotation': np.random.normal(45, 8, n_samples),
+            'peak_hip_rotation': np.random.normal(30, 5, n_samples),
+            'peak_knee_extension': np.random.normal(160, 12, n_samples),
+            'peak_trunk_rotation': np.random.normal(50, 7, n_samples)
+        }
+        
+        df = pd.DataFrame(data)
+        df.to_csv('hp_obp.csv', index=False)
+        print('Mock data created successfully')
+        "
+
+    - name: Run analysis
+      run: python driveline.py
+
+    - name: Basic code check
+      run: |
+        flake8 driveline.py --count --select=E9,F63,F7,F82 --show-source --statistics
