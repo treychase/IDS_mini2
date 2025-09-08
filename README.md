@@ -2,73 +2,152 @@
 
 # Driveline Open Biomechanics Analysis
 
-## Overview
+# Baseball Pitch Speed Prediction using Biomechanics Data
 
-This notebook analyzes a dataset of pitching biomechanics and performance metrics to predict pitch velocity (`pitch_speed_mph`) from peak biomechanics metrics using several machine learning models. The workflow includes data loading, cleaning, exploratory analysis, preprocessing, model training, evaluation, and comparison.
+This repository contains a machine learning analysis that predicts baseball pitch velocity using peak biomechanics metrics. The project implements and compares three different regression models to determine the best approach for pitch speed prediction.
 
----
+## Repository Structure
 
-## Steps
+```
+.
+├── Makefile           # Build automation and project commands
+├── requirements.txt   # Python dependencies
+├── driveline.py      # Main analysis script
+├── hp_obp.csv        # Baseball biomechanics dataset (not included)
+└── README.md         # This file
+```
 
-### 1. Load Data and Libraries
+## Quick Start
 
-- Import necessary libraries: `pandas`, `matplotlib`, and scikit-learn modules.
-- Load the dataset (`hp_obp.csv`) into a pandas DataFrame.
+### Prerequisites
+- Python 3.x
+- pip3
 
-### 2. Exploratory Data Analysis (EDA)
+### Installation & Usage
 
-- Display the first few rows, data info, and descriptive statistics.
-- Check for missing values and duplicate rows to assess data quality.
+1. **Install dependencies:**
+   ```bash
+   make install
+   ```
 
-### 3. Data Preprocessing
+2. **Run the analysis:**
+   ```bash
+   make run
+   ```
 
-- **Feature Selection:** Select columns related to peak biomechanics, pitch speed, test date, and athlete ID.
-- **Outlier Removal:** Remove outliers in `pitch_speed_mph` using the IQR (interquartile range) method.
-- **Missing Value Imputation:** Fill missing values in numeric columns with the column mean.
-- Display the cleaned data and its summary statistics.
+3. **Lint the code:**
+   ```bash
+   make lint
+   ```
 
-### 4. Data Visualization
+4. **Clean cache files:**
+   ```bash
+   make clean
+   ```
 
-- Plot a histogram of `pitch_speed_mph` with a dashed red line indicating the mean pitch speed.
+5. **View all available commands:**
+   ```bash
+   make help
+   ```
 
-### 5. Machine Learning Models
+## Dataset Requirements
 
-#### Model 1: Classic Linear Regression
+The analysis expects a CSV file named `hp_obp.csv` containing:
+- `pitch_speed_mph`: Target variable (pitch velocity)
+- `athlete_uid`: Unique athlete identifier
+- `test_date`: Date of biomechanics assessment
+- Multiple columns with 'peak' in the name (biomechanics metrics)
 
-- Select numeric features (excluding `pitch_speed_mph`).
-- Split data into training and test sets.
-- Scale features using `StandardScaler`.
-- Train a linear regression model and evaluate its performance (MSE and R²).
-- Visualize actual vs. predicted pitch speeds.
+## Analysis Overview
+
+The `driveline.py` script follows a systematic machine learning workflow:
+
+### Step 1: Exploratory Data Analysis (EDA)
+- **Data inspection**: Displays first 5 rows, data types, and summary statistics
+- **Quality assessment**: Checks for missing values and duplicate records
+- **Data profiling**: Generates descriptive statistics for all variables
+
+### Step 2: Data Preprocessing
+- **Feature selection**: Filters dataset to include only:
+  - Peak biomechanics metrics (columns containing 'peak')
+  - Pitch speed (target variable)
+  - Athlete identifiers and test dates
+- **Outlier removal**: Uses Interquartile Range (IQR) method to remove pitch speed outliers
+  - Lower bound: Q1 - 1.5 × IQR
+  - Upper bound: Q3 + 1.5 × IQR
+- **Missing value imputation**: Fills null values with column means
+- **Feature scaling**: Standardizes features using StandardScaler
+
+### Step 3: Machine Learning Implementation
+
+Three regression models are implemented and compared:
+
+#### Model 1: Linear Regression
+- **Algorithm**: Classic ordinary least squares regression
+- **Use case**: Baseline model for linear relationships
+- **Performance**: MSE ≈ 29.1, R² ≈ 0.67
 
 #### Model 2: Bayesian Ridge Regression
-
-- Train a Bayesian Ridge regression model on the same data.
-- Evaluate and visualize predictions.
+- **Algorithm**: Bayesian approach to linear regression with regularization
+- **Use case**: Handles uncertainty and prevents overfitting
+- **Performance**: MSE ≈ 29.1, R² ≈ 0.67
 
 #### Model 3: Random Forest Regressor
+- **Algorithm**: Ensemble method using multiple decision trees
+- **Use case**: Captures non-linear relationships and feature interactions
+- **Performance**: MSE ≈ 27.07, R² ≈ 0.69
 
-- Train a Random Forest regressor.
-- Evaluate and visualize predictions.
+## Key Findings
 
-### 6. Model Comparison
+### Model Performance Comparison
 
-- Create a DataFrame summarizing the Mean Squared Error (MSE) and R² score for all three models.
-- Visualize all models' predictions against actual values in a single scatter plot.
+| Model | Mean Squared Error | R² Score | 
+|-------|-------------------|----------|
+| Linear Regression | 29.1 | 0.67 |
+| Bayesian Ridge | 29.1 | 0.67 |
+| **Random Forest** | **27.07** | **0.69** |
 
----
+### Insights
 
-## Findings
+1. **Best Performer**: Random Forest achieved the lowest MSE and highest R² score
+2. **Linear Models**: Both linear approaches performed nearly identically
+3. **Predictive Power**: All models explain ~67-69% of pitch speed variance
+4. **Recommendation**: Despite Random Forest's slight edge, **Linear Regression is recommended** for:
+   - **Simplicity**: Easier to interpret and implement
+   - **Cost efficiency**: Lower computational requirements
+   - **Minimal performance difference**: Only ~2% improvement for added complexity
 
-- **All three models—Linear Regression, Bayesian Ridge, and Random Forest—show similar performance in predicting pitch velocity.**
-- **Random Forest** achieves the lowest mean squared error (27.07) and the highest R² score (0.69), indicating slightly better predictive accuracy and variance explanation.
-- **Linear Regression** and **Bayesian Ridge** perform nearly identically, with MSEs around 29.1 and R² scores around 0.67.
-- **Recommendation:** While Random Forest performs best, the difference is small. For cost efficiency and simplicity, classic linear regression is recommended.
+### Data Quality Observations
+- Successfully removed outliers to improve model stability
+- Peak biomechanics metrics show predictive value for pitch velocity
+- Missing value imputation with means proved effective
 
----
+## Visualizations
 
-## Usage
+The script generates several plots:
+- **Histogram**: Distribution of pitch speeds with mean indicator
+- **Scatter plots**: Actual vs. predicted values for each model
+- **Comparison plot**: All three models' predictions overlaid
 
-1. Place your data file (`hp_obp.csv`) in the working directory.
-2. Run the notebook cells sequentially to reproduce the analysis and results.
-3. Review the summary and model comparison to select the best approach for pitch
+## Technical Notes
+
+- **Train/test split**: 80/20 random split with fixed seed (42)
+- **Feature scaling**: Applied only after train/test split to prevent data leakage
+- **Evaluation metrics**: Mean Squared Error and R² coefficient of determination
+- **Cross-validation**: Could be added for more robust performance estimation
+
+## Dependencies
+
+- `pandas`: Data manipulation and analysis
+- `matplotlib`: Data visualization
+- `scikit-learn`: Machine learning algorithms and preprocessing
+- `flake8`: Code linting (development)
+
+## Future Improvements
+
+1. **Feature engineering**: Create interaction terms between biomechanics metrics
+2. **Cross-validation**: Implement k-fold CV for more robust evaluation
+3. **Hyperparameter tuning**: Grid search for Random Forest optimization
+4. **Additional models**: Try XGBoost, Support Vector Regression
+5. **Feature importance**: Analyze which biomechanics metrics matter most
+6. **Time series analysis**: Incorporate temporal patterns if multiple measurements per athlete
