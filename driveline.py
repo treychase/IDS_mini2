@@ -5,13 +5,11 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import io
 
 data = pd.read_csv('hp_obp.csv')
 
 # ### Step 1: Exploratory Data Analysis (EDA)
-
-from IPython.display import display, Markdown
-import io
 
 # First 5 Rows of Data
 print("#### First 5 Rows of Data")
