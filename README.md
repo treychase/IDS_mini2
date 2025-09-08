@@ -1,3 +1,4 @@
+[![Run Baseball Analysis](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml/badge.svg)](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml)
 
 # Driveline Open Biomechanics Analysis
 
@@ -8,12 +9,14 @@ This repository contains a machine learning analysis that predicts baseball pitc
 ## Repository Structure
 
 ```
-.
-├── Makefile           # Build automation and project commands
-├── requirements.txt   # Python dependencies
-├── driveline.py      # Main analysis script
-├── hp_obp.csv        # Baseball biomechanics dataset (not included)
-└── README.md         # This file
+
+├── .github/
+│   └── workflows/
+│       └── ci.yml          
+├── Makefile
+├── driveline.py
+├── requirements.txt
+└── README.md
 ```
 
 ## Quick Start
