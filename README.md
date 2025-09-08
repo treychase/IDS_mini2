@@ -12,7 +12,8 @@ This repository contains a machine learning analysis that predicts baseball pitc
 
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          
+│       └── ci.yml
+├── .gitignore        
 ├── Makefile
 ├── driveline.py
 ├── requirements.txt
