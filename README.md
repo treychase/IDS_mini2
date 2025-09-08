@@ -1,3 +1,5 @@
+[![Run Jupyter Notebook](https://github.com/treychase/IDS_mini2/actions/workflows/main.yml/badge.svg)](https://github.com/treychase/IDS_mini2/actions/workflows/main.yml)
+
 # Driveline Open Biomechanics Analysis
 
 ## Overview
