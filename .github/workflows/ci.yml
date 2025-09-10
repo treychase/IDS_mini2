@@ -223,42 +223,44 @@ except Exception as e:
     - name: Test imports and basic functionality
       run: |
         echo "Testing Python ${{ matrix.python-version }} compatibility..."
-        python -c "
-import driveline
-from driveline import load_data, prepare_features_target
-print(f'✓ Successfully imported driveline module on Python ${{ matrix.python-version }}')
-"
+        cat > test_imports.py << 'EOF'
+        import driveline
+        from driveline import load_data, prepare_features_target
+        print(f'✓ Successfully imported driveline module on Python ${{ matrix.python-version }}')
+        EOF
+        python test_imports.py
     
     - name: Run basic unit tests
       run: |
-        python -c "
-import unittest
-import sys
-import os
+        cat > test_compatibility.py << 'EOF'
+        import unittest
+        import sys
+        import os
 
-# Add current directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        # Add current directory to path
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Import test modules
-try:
-    from test_driveline import TestDataLoading, TestDataPreprocessing
-    
-    # Create a minimal test suite
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestDataLoading))
-    suite.addTest(unittest.makeSuite(TestDataPreprocessing))
-    
-    # Run tests
-    runner = unittest.TextTestRunner(verbosity=1)
-    result = runner.run(suite)
-    
-    if result.failures or result.errors:
-        print(f'❌ Tests failed on Python ${{ matrix.python-version }}')
-        sys.exit(1)
-    else:
-        print(f'✅ All tests passed on Python ${{ matrix.python-version }}')
-        
-except ImportError as e:
-    print(f'❌ Import error on Python ${{ matrix.python-version }}: {e}')
-    sys.exit(1)
-"
+        # Import test modules
+        try:
+            from test_driveline import TestDataLoading, TestDataPreprocessing
+            
+            # Create a minimal test suite
+            suite = unittest.TestSuite()
+            suite.addTest(unittest.makeSuite(TestDataLoading))
+            suite.addTest(unittest.makeSuite(TestDataPreprocessing))
+            
+            # Run tests
+            runner = unittest.TextTestRunner(verbosity=1)
+            result = runner.run(suite)
+            
+            if result.failures or result.errors:
+                print(f'❌ Tests failed on Python ${{ matrix.python-version }}')
+                sys.exit(1)
+            else:
+                print(f'✅ All tests passed on Python ${{ matrix.python-version }}')
+                
+        except ImportError as e:
+            print(f'❌ Import error on Python ${{ matrix.python-version }}: {e}')
+            sys.exit(1)
+        EOF
+        python test_compatibility.py
