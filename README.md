@@ -1,4 +1,4 @@
-[![Run Baseball Analysis](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml)
+[![Test Pipeline](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml/badge.svg)](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml)
 
 # Driveline Open Biomechanics Analysis
 
