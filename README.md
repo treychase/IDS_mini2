@@ -4,7 +4,7 @@
 
 # Baseball Pitch Speed Prediction using Biomechanics Data
 
-This repository contains a machine learning analysis that predicts baseball pitch velocity using peak biomechanics metrics. The project implements and compares three different regression models to determine the best approach for pitch speed prediction.
+This repository contains a machine learning analysis that predicts baseball pitch velocity from peak biomechanics metrics. The project implements and compares three different regression models to determine the best approach for pitch speed prediction.
 
 ## Repository Structure
 
@@ -12,7 +12,8 @@ This repository contains a machine learning analysis that predicts baseball pitc
 
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          
+│       └── ci.yml
+├── .gitignore        
 ├── Makefile
 ├── driveline.py
 ├── requirements.txt
