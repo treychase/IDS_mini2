@@ -1,9 +1,10 @@
-.PHONY: help install run lint clean
+.PHONY: help install run test lint clean
 
 help:
 	@echo "Available targets:"
 	@echo "  install   Install Python dependencies"
 	@echo "  run       Run the driveline.py script"
+	@echo "  test      Test the driveline.py script"
 	@echo "  lint      Lint Python code with flake8"
 	@echo "  clean     Remove Python cache files"
 
@@ -13,6 +14,9 @@ install:
 
 run:
 	python3 driveline.py
+
+test:
+	python3 test_driveline.py
 
 lint:
 	flake8 driveline.py || echo "flake8 not installed. Run 'pip3 install flake8' to enable linting."
