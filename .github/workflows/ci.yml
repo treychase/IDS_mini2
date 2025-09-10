@@ -70,67 +70,69 @@ jobs:
     - name: Create mock data for integration testing
       run: |
         echo "Creating mock biomechanics data..."
-        python -c "
-import pandas as pd
-import numpy as np
+        cat > create_mock_data.py << 'EOF'
+        import pandas as pd
+        import numpy as np
 
-# Create comprehensive mock data with expected structure
-np.random.seed(42)
-n_samples = 1000
+        # Create comprehensive mock data with expected structure
+        np.random.seed(42)
+        n_samples = 1000
 
-# Generate realistic biomechanics data
-data = {
-    'athlete_uid': [f'athlete_{i:03d}' for i in range(n_samples)],
-    'test_date': pd.date_range('2023-01-01', periods=n_samples, freq='D').strftime('%Y-%m-%d'),
-    'pitch_speed_mph': np.random.normal(85, 8, n_samples),
-    'peak_elbow_flexion': np.random.normal(100, 15, n_samples),
-    'peak_shoulder_rotation': np.random.normal(45, 8, n_samples),
-    'peak_hip_rotation': np.random.normal(30, 5, n_samples),
-    'peak_knee_extension': np.random.normal(160, 12, n_samples),
-    'peak_trunk_rotation': np.random.normal(50, 7, n_samples),
-    'peak_elbow_extension': np.random.normal(170, 10, n_samples),
-    'peak_shoulder_abduction': np.random.normal(90, 12, n_samples),
-    'peak_wrist_flexion': np.random.normal(20, 5, n_samples),
-    'peak_ankle_dorsiflexion': np.random.normal(15, 3, n_samples),
-}
+        # Generate realistic biomechanics data
+        data = {
+            'athlete_uid': [f'athlete_{i:03d}' for i in range(n_samples)],
+            'test_date': pd.date_range('2023-01-01', periods=n_samples, freq='D').strftime('%Y-%m-%d'),
+            'pitch_speed_mph': np.random.normal(85, 8, n_samples),
+            'peak_elbow_flexion': np.random.normal(100, 15, n_samples),
+            'peak_shoulder_rotation': np.random.normal(45, 8, n_samples),
+            'peak_hip_rotation': np.random.normal(30, 5, n_samples),
+            'peak_knee_extension': np.random.normal(160, 12, n_samples),
+            'peak_trunk_rotation': np.random.normal(50, 7, n_samples),
+            'peak_elbow_extension': np.random.normal(170, 10, n_samples),
+            'peak_shoulder_abduction': np.random.normal(90, 12, n_samples),
+            'peak_wrist_flexion': np.random.normal(20, 5, n_samples),
+            'peak_ankle_dorsiflexion': np.random.normal(15, 3, n_samples),
+        }
 
-# Add some realistic correlations between biomechanics and pitch speed
-for i in range(n_samples):
-    # Higher peak values generally correlate with higher pitch speed
-    speed_factor = (data['peak_elbow_flexion'][i] - 100) * 0.1 + (data['peak_trunk_rotation'][i] - 50) * 0.2
-    data['pitch_speed_mph'][i] += speed_factor + np.random.normal(0, 2)
+        # Add some realistic correlations between biomechanics and pitch speed
+        for i in range(n_samples):
+            # Higher peak values generally correlate with higher pitch speed
+            speed_factor = (data['peak_elbow_flexion'][i] - 100) * 0.1 + (data['peak_trunk_rotation'][i] - 50) * 0.2
+            data['pitch_speed_mph'][i] += speed_factor + np.random.normal(0, 2)
 
-# Ensure pitch speeds are realistic (remove extreme outliers)
-data['pitch_speed_mph'] = np.clip(data['pitch_speed_mph'], 60, 105)
+        # Ensure pitch speeds are realistic (remove extreme outliers)
+        data['pitch_speed_mph'] = np.clip(data['pitch_speed_mph'], 60, 105)
 
-# Add a few missing values to test handling
-missing_indices = np.random.choice(n_samples, size=int(n_samples * 0.02), replace=False)
-for idx in missing_indices[:10]:
-    data['peak_elbow_flexion'][idx] = np.nan
-for idx in missing_indices[10:]:
-    data['peak_shoulder_rotation'][idx] = np.nan
+        # Add a few missing values to test handling
+        missing_indices = np.random.choice(n_samples, size=int(n_samples * 0.02), replace=False)
+        for idx in missing_indices[:10]:
+            data['peak_elbow_flexion'][idx] = np.nan
+        for idx in missing_indices[10:]:
+            data['peak_shoulder_rotation'][idx] = np.nan
 
-df = pd.DataFrame(data)
-df.to_csv('hp_obp.csv', index=False)
-print(f'Mock data created successfully with shape: {df.shape}')
-print(f'Columns: {list(df.columns)}')
-print(f'Pitch speed range: {df[\"pitch_speed_mph\"].min():.1f} - {df[\"pitch_speed_mph\"].max():.1f} mph')
-print(f'Missing values: {df.isnull().sum().sum()}')
-"
+        df = pd.DataFrame(data)
+        df.to_csv('hp_obp.csv', index=False)
+        print(f'Mock data created successfully with shape: {df.shape}')
+        print(f'Columns: {list(df.columns)}')
+        print(f'Pitch speed range: {df["pitch_speed_mph"].min():.1f} - {df["pitch_speed_mph"].max():.1f} mph')
+        print(f'Missing values: {df.isnull().sum().sum()}')
+        EOF
+        python create_mock_data.py
     
     - name: Validate mock data
       run: |
         echo "Validating created data file..."
         test -f hp_obp.csv && echo "✓ hp_obp.csv found" || echo "✗ hp_obp.csv not found"
-        python -c "
-import pandas as pd
-data = pd.read_csv('hp_obp.csv')
-print(f'Data validation:')
-print(f'  Shape: {data.shape}')
-print(f'  Required columns present: {\"pitch_speed_mph\" in data.columns and \"athlete_uid\" in data.columns}')
-print(f'  Peak columns found: {len([col for col in data.columns if \"peak\" in col.lower()])}')
-print(f'  Data types: {data.dtypes.to_dict()}')
-"
+        cat > validate_data.py << 'EOF'
+        import pandas as pd
+        data = pd.read_csv('hp_obp.csv')
+        print(f'Data validation:')
+        print(f'  Shape: {data.shape}')
+        print(f'  Required columns present: {"pitch_speed_mph" in data.columns and "athlete_uid" in data.columns}')
+        print(f'  Peak columns found: {len([col for col in data.columns if "peak" in col.lower()])}')
+        print(f'  Data types: {data.dtypes.to_dict()}')
+        EOF
+        python validate_data.py
     
     - name: Run complete analysis pipeline
       run: |
@@ -140,13 +142,14 @@ print(f'  Data types: {data.dtypes.to_dict()}')
     - name: Verify analysis outputs
       run: |
         echo "Verifying analysis completed successfully..."
-        python -c "
-import os
-print('Analysis verification:')
-print(f'  Script completed without errors: ✓')
-print(f'  Working directory: {os.getcwd()}')
-print(f'  Files in directory: {os.listdir(\".\")}')
-"
+        cat > verify_outputs.py << 'EOF'
+        import os
+        print('Analysis verification:')
+        print(f'  Script completed without errors: ✓')
+        print(f'  Working directory: {os.getcwd()}')
+        print(f'  Files in directory: {os.listdir(".")}')
+        EOF
+        python verify_outputs.py
     
     - name: Test Make commands (if available)
       run: |
@@ -175,33 +178,34 @@ print(f'  Files in directory: {os.listdir(\".\")}')
     - name: Performance benchmark
       run: |
         echo "Running performance benchmark..."
-        python -c "
-import time
-import pandas as pd
-from driveline import run_complete_pipeline
+        cat > performance_test.py << 'EOF'
+        import time
+        import pandas as pd
+        from driveline import run_complete_pipeline
 
-start_time = time.time()
-try:
-    results = run_complete_pipeline('hp_obp.csv')
-    end_time = time.time()
-    execution_time = end_time - start_time
-    
-    print(f'Performance Metrics:')
-    print(f'  Total execution time: {execution_time:.2f} seconds')
-    print(f'  Pipeline completed successfully: ✓')
-    print(f'  Results shape: {results.shape}')
-    print(f'  Best model R²: {results[\"R^2 Score\"].max():.3f}')
-    
-    # Performance thresholds
-    if execution_time > 60:
-        print(f'⚠️  Warning: Execution took longer than 60 seconds')
-    else:
-        print(f'✓ Performance within acceptable range')
-        
-except Exception as e:
-    print(f'❌ Pipeline failed: {str(e)}')
-    exit(1)
-"
+        start_time = time.time()
+        try:
+            results = run_complete_pipeline('hp_obp.csv')
+            end_time = time.time()
+            execution_time = end_time - start_time
+            
+            print(f'Performance Metrics:')
+            print(f'  Total execution time: {execution_time:.2f} seconds')
+            print(f'  Pipeline completed successfully: ✓')
+            print(f'  Results shape: {results.shape}')
+            print(f'  Best model R²: {results["R^2 Score"].max():.3f}')
+            
+            # Performance thresholds
+            if execution_time > 60:
+                print(f'⚠️  Warning: Execution took longer than 60 seconds')
+            else:
+                print(f'✓ Performance within acceptable range')
+                
+        except Exception as e:
+            print(f'❌ Pipeline failed: {str(e)}')
+            exit(1)
+        EOF
+        python performance_test.py
 
   # Separate job for testing on different Python versions
   test-compatibility:
