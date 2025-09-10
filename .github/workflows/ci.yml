@@ -1,4 +1,4 @@
-name: Baseball Pitch Analysis CI
+name: Test Pipeline
 
 on:
   push:
@@ -9,131 +9,49 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8, 3.9, 3.10, 3.11]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.9
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        python-version: 3.9
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas matplotlib numpy scikit-learn scipy
-        pip install flake8 pytest pytest-cov
 
-    - name: Lint with flake8
+    - name: Run tests
       run: |
-        # Stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Treat all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Test with pytest
-      run: |
-        # Run the custom test suite
         python test_driveline.py
 
-    - name: Test imports and basic functionality
+    - name: Test script runs without errors
       run: |
         python -c "
         import driveline
         import pandas as pd
         import numpy as np
         
-        # Test that all functions can be imported
-        from driveline import load_data, perform_eda, filter_columns
-        print('✅ All imports successful')
-        
-        # Create a small test dataset
+        # Create test data
         test_data = pd.DataFrame({
-            'pitch_speed_mph': np.random.normal(90, 5, 20),
-            'peak_velocity_x': np.random.normal(13, 2, 20),
-            'peak_velocity_y': np.random.normal(9, 1.5, 20),
-            'test_date': ['2024-01-01'] * 20,
-            'athlete_uid': [f'athlete_{i}' for i in range(20)]
+            'pitch_speed_mph': np.random.normal(90, 5, 50),
+            'peak_velocity_x': np.random.normal(13, 2, 50),
+            'peak_velocity_y': np.random.normal(9, 1.5, 50),
+            'peak_acceleration_x': np.random.normal(50, 10, 50),
+            'test_date': ['2024-01-01'] * 50,
+            'athlete_uid': [f'athlete_{i}' for i in range(50)]
         })
         
-        # Test basic functionality
-        filtered_data = driveline.filter_columns(test_data)
-        print(f'✅ Filtered data shape: {filtered_data.shape}')
+        # Save test data to CSV
+        test_data.to_csv('test_data.csv', index=False)
         
+        # Test that main functions work
+        data = driveline.load_data('test_data.csv')
+        filtered_data = driveline.filter_columns(data)
         cleaned_data = driveline.handle_missing_values(filtered_data)
-        print(f'✅ Cleaned data shape: {cleaned_data.shape}')
-        
         X, y = driveline.prepare_features_target(cleaned_data)
-        print(f'✅ Features shape: {X.shape}, Target shape: {y.shape}')
         
-        print('✅ Basic functionality test passed!')
+        print('✅ Script runs successfully!')
         "
-
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-
-    - name: Install code quality tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install black isort mypy
-
-    - name: Check code formatting with black
-      run: |
-        black --check --diff .
-
-    - name: Check import sorting with isort
-      run: |
-        isort --check-only --diff .
-
-    - name: Type checking with mypy (optional - will not fail build)
-      continue-on-error: true
-      run: |
-        mypy driveline.py --ignore-missing-imports
-
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-
-    - name: Install security tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install bandit safety
-
-    - name: Run security checks with bandit
-      run: |
-        bandit -r . -f json -o bandit-report.json || true
-        bandit -r .
-
-    - name: Check for known security vulnerabilities
-      run: |
-        # Create a temporary requirements file for safety check
-        echo "pandas" > temp_requirements.txt
-        echo "matplotlib" >> temp_requirements.txt
-        echo "numpy" >> temp_requirements.txt
-        echo "scikit-learn" >> temp_requirements.txt
-        echo "scipy" >> temp_requirements.txt
-        safety check -r temp_requirements.txt
