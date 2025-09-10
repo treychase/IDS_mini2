@@ -1,4 +1,7 @@
-name: Run Baseball Analysis
+name: Test Baseball Analysis Code
+
+# This workflow tests the code quality, unit tests, and functionality 
+# without requiring actual biomechanics data files
 
 on:
   push:
