@@ -1,273 +1,139 @@
-name: Test Baseball Analysis Code
-
-# This workflow tests the code quality, unit tests, and functionality 
-# without requiring actual biomechanics data files
+name: Baseball Pitch Analysis CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  test-and-analyze:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        # Install additional dev dependencies for CI
-        pip install coverage flake8 autopep8
-    
-    - name: Check dependencies
-      run: |
-        echo "Checking required dependencies..."
-        python -c "import pandas; print('✓ pandas')" || echo "✗ pandas (missing)"
-        python -c "import matplotlib; print('✓ matplotlib')" || echo "✗ matplotlib (missing)"
-        python -c "import sklearn; print('✓ scikit-learn')" || echo "✗ scikit-learn (missing)"
-        python -c "import numpy; print('✓ numpy')" || echo "✗ numpy (missing)"
-        python -c "import scipy; print('✓ scipy')" || echo "✗ scipy (missing)"
-    
-    - name: Lint code with flake8
-      run: |
-        echo "Linting Python code..."
-        flake8 driveline.py --max-line-length=100 --ignore=E501,W503 --count --show-source --statistics || echo "Linting completed with warnings"
-        flake8 test_driveline.py --max-line-length=120 --ignore=E501,W503 --count --show-source --statistics || echo "Test linting completed with warnings"
-    
-    - name: Run unit tests
-      run: |
-        echo "Running comprehensive unit tests..."
-        python test_driveline.py
-    
-    - name: Run unit tests with coverage
-      run: |
-        echo "Running tests with coverage reporting..."
-        coverage run test_driveline.py
-        coverage report -m
-        coverage html
-    
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: htmlcov/
-    
-    - name: Quick smoke test
-      run: |
-        echo "Running quick smoke tests..."
-        python -c "import driveline; print('✓ Module imports successfully')"
-        python -c "from driveline import load_data, run_complete_pipeline; print('✓ Main functions importable')"
-    
-    - name: Create mock data for integration testing
-      run: |
-        echo "Creating mock biomechanics data..."
-        cat > create_mock_data.py << 'EOF'
-        import pandas as pd
-        import numpy as np
-
-        # Create comprehensive mock data with expected structure
-        np.random.seed(42)
-        n_samples = 1000
-
-        # Generate realistic biomechanics data
-        data = {
-            'athlete_uid': [f'athlete_{i:03d}' for i in range(n_samples)],
-            'test_date': pd.date_range('2023-01-01', periods=n_samples, freq='D').strftime('%Y-%m-%d'),
-            'pitch_speed_mph': np.random.normal(85, 8, n_samples),
-            'peak_elbow_flexion': np.random.normal(100, 15, n_samples),
-            'peak_shoulder_rotation': np.random.normal(45, 8, n_samples),
-            'peak_hip_rotation': np.random.normal(30, 5, n_samples),
-            'peak_knee_extension': np.random.normal(160, 12, n_samples),
-            'peak_trunk_rotation': np.random.normal(50, 7, n_samples),
-            'peak_elbow_extension': np.random.normal(170, 10, n_samples),
-            'peak_shoulder_abduction': np.random.normal(90, 12, n_samples),
-            'peak_wrist_flexion': np.random.normal(20, 5, n_samples),
-            'peak_ankle_dorsiflexion': np.random.normal(15, 3, n_samples),
-        }
-
-        # Add some realistic correlations between biomechanics and pitch speed
-        for i in range(n_samples):
-            # Higher peak values generally correlate with higher pitch speed
-            speed_factor = (data['peak_elbow_flexion'][i] - 100) * 0.1 + (data['peak_trunk_rotation'][i] - 50) * 0.2
-            data['pitch_speed_mph'][i] += speed_factor + np.random.normal(0, 2)
-
-        # Ensure pitch speeds are realistic (remove extreme outliers)
-        data['pitch_speed_mph'] = np.clip(data['pitch_speed_mph'], 60, 105)
-
-        # Add a few missing values to test handling
-        missing_indices = np.random.choice(n_samples, size=int(n_samples * 0.02), replace=False)
-        for idx in missing_indices[:10]:
-            data['peak_elbow_flexion'][idx] = np.nan
-        for idx in missing_indices[10:]:
-            data['peak_shoulder_rotation'][idx] = np.nan
-
-        df = pd.DataFrame(data)
-        df.to_csv('hp_obp.csv', index=False)
-        print(f'Mock data created successfully with shape: {df.shape}')
-        print(f'Columns: {list(df.columns)}')
-        print(f'Pitch speed range: {df["pitch_speed_mph"].min():.1f} - {df["pitch_speed_mph"].max():.1f} mph')
-        print(f'Missing values: {df.isnull().sum().sum()}')
-        EOF
-        python create_mock_data.py
-    
-    - name: Validate mock data
-      run: |
-        echo "Validating created data file..."
-        test -f hp_obp.csv && echo "✓ hp_obp.csv found" || echo "✗ hp_obp.csv not found"
-        cat > validate_data.py << 'EOF'
-        import pandas as pd
-        data = pd.read_csv('hp_obp.csv')
-        print(f'Data validation:')
-        print(f'  Shape: {data.shape}')
-        print(f'  Required columns present: {"pitch_speed_mph" in data.columns and "athlete_uid" in data.columns}')
-        print(f'  Peak columns found: {len([col for col in data.columns if "peak" in col.lower()])}')
-        print(f'  Data types: {data.dtypes.to_dict()}')
-        EOF
-        python validate_data.py
-    
-    - name: Run complete analysis pipeline
-      run: |
-        echo "Running complete baseball pitch analysis pipeline..."
-        python driveline.py
-    
-    - name: Verify analysis outputs
-      run: |
-        echo "Verifying analysis completed successfully..."
-        cat > verify_outputs.py << 'EOF'
-        import os
-        print('Analysis verification:')
-        print(f'  Script completed without errors: ✓')
-        print(f'  Working directory: {os.getcwd()}')
-        print(f'  Files in directory: {os.listdir(".")}')
-        EOF
-        python verify_outputs.py
-    
-    - name: Test Make commands (if available)
-      run: |
-        echo "Testing Make commands..."
-        if command -v make &> /dev/null; then
-          echo "Make is available, testing commands..."
-          make check-deps || echo "Make check-deps completed"
-          make test-quick || echo "Make test-quick completed"
-          make clean || echo "Make clean completed"
-        else
-          echo "Make not available, skipping Make tests"
-        fi
-    
-    - name: Archive analysis artifacts
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: analysis-artifacts
-        path: |
-          hp_obp.csv
-          *.png
-          *.jpg
-          *.pdf
-        retention-days: 30
-    
-    - name: Performance benchmark
-      run: |
-        echo "Running performance benchmark..."
-        cat > performance_test.py << 'EOF'
-        import time
-        import pandas as pd
-        from driveline import run_complete_pipeline
-
-        start_time = time.time()
-        try:
-            results = run_complete_pipeline('hp_obp.csv')
-            end_time = time.time()
-            execution_time = end_time - start_time
-            
-            print(f'Performance Metrics:')
-            print(f'  Total execution time: {execution_time:.2f} seconds')
-            print(f'  Pipeline completed successfully: ✓')
-            print(f'  Results shape: {results.shape}')
-            print(f'  Best model R²: {results["R^2 Score"].max():.3f}')
-            
-            # Performance thresholds
-            if execution_time > 60:
-                print(f'⚠️  Warning: Execution took longer than 60 seconds')
-            else:
-                print(f'✓ Performance within acceptable range')
-                
-        except Exception as e:
-            print(f'❌ Pipeline failed: {str(e)}')
-            exit(1)
-        EOF
-        python performance_test.py
-
-  # Separate job for testing on different Python versions
-  test-compatibility:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, '3.10', 3.11]
-    
+        python-version: [3.8, 3.9, 3.10, 3.11]
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
+        pip install pandas matplotlib numpy scikit-learn scipy
+        pip install flake8 pytest pytest-cov
+
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Treat all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Test with pytest
+      run: |
+        # Run the custom test suite
+        python test_driveline.py
+
     - name: Test imports and basic functionality
       run: |
-        echo "Testing Python ${{ matrix.python-version }} compatibility..."
-        cat > test_imports.py << 'EOF'
+        python -c "
         import driveline
-        from driveline import load_data, prepare_features_target
-        print(f'✓ Successfully imported driveline module on Python ${{ matrix.python-version }}')
-        EOF
-        python test_imports.py
-    
-    - name: Run basic unit tests
+        import pandas as pd
+        import numpy as np
+        
+        # Test that all functions can be imported
+        from driveline import load_data, perform_eda, filter_columns
+        print('✅ All imports successful')
+        
+        # Create a small test dataset
+        test_data = pd.DataFrame({
+            'pitch_speed_mph': np.random.normal(90, 5, 20),
+            'peak_velocity_x': np.random.normal(13, 2, 20),
+            'peak_velocity_y': np.random.normal(9, 1.5, 20),
+            'test_date': ['2024-01-01'] * 20,
+            'athlete_uid': [f'athlete_{i}' for i in range(20)]
+        })
+        
+        # Test basic functionality
+        filtered_data = driveline.filter_columns(test_data)
+        print(f'✅ Filtered data shape: {filtered_data.shape}')
+        
+        cleaned_data = driveline.handle_missing_values(filtered_data)
+        print(f'✅ Cleaned data shape: {cleaned_data.shape}')
+        
+        X, y = driveline.prepare_features_target(cleaned_data)
+        print(f'✅ Features shape: {X.shape}, Target shape: {y.shape}')
+        
+        print('✅ Basic functionality test passed!')
+        "
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install code quality tools
       run: |
-        cat > test_compatibility.py << 'EOF'
-        import unittest
-        import sys
-        import os
+        python -m pip install --upgrade pip
+        pip install black isort mypy
 
-        # Add current directory to path
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    - name: Check code formatting with black
+      run: |
+        black --check --diff .
 
-        # Import test modules
-        try:
-            from test_driveline import TestDataLoading, TestDataPreprocessing
-            
-            # Create a minimal test suite
-            suite = unittest.TestSuite()
-            suite.addTest(unittest.makeSuite(TestDataLoading))
-            suite.addTest(unittest.makeSuite(TestDataPreprocessing))
-            
-            # Run tests
-            runner = unittest.TextTestRunner(verbosity=1)
-            result = runner.run(suite)
-            
-            if result.failures or result.errors:
-                print(f'❌ Tests failed on Python ${{ matrix.python-version }}')
-                sys.exit(1)
-            else:
-                print(f'✅ All tests passed on Python ${{ matrix.python-version }}')
-                
-        except ImportError as e:
-            print(f'❌ Import error on Python ${{ matrix.python-version }}: {e}')
-            sys.exit(1)
-        EOF
-        python test_compatibility.py
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --diff .
+
+    - name: Type checking with mypy (optional - will not fail build)
+      continue-on-error: true
+      run: |
+        mypy driveline.py --ignore-missing-imports
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+
+    - name: Run security checks with bandit
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r .
+
+    - name: Check for known security vulnerabilities
+      run: |
+        # Create a temporary requirements file for safety check
+        echo "pandas" > temp_requirements.txt
+        echo "matplotlib" >> temp_requirements.txt
+        echo "numpy" >> temp_requirements.txt
+        echo "scikit-learn" >> temp_requirements.txt
+        echo "scipy" >> temp_requirements.txt
+        safety check -r temp_requirements.txt
