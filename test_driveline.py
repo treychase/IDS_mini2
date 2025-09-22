@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import the functions from the refactored driveline module
 try:
     from driveline import (
-        load_data, perform_eda, filter_columns, remove_outliers, 
+        load_data, perform_eda, filter_columns, remove_outliers,
         handle_missing_values, prepare_features_target, split_and_scale_data,
         train_linear_regression, train_bayesian_ridge, train_random_forest,
         evaluate_model, plot_pitch_speed_histogram, plot_actual_vs_predicted,
@@ -33,7 +33,7 @@ except ImportError as e:
 
 class TestDataLoading(unittest.TestCase):
     """Test data loading functionality"""
-    
+
     def setUp(self):
         """Set up test data"""
         self.sample_csv_content = """pitch_speed_mph,peak_velocity_x,peak_velocity_y,test_date,athlete_uid
@@ -49,9 +49,9 @@ class TestDataLoading(unittest.TestCase):
             'peak_velocity_x': [12.5, 13.2, 14.1]
         })
         mock_read_csv.return_value = mock_df
-        
+
         result = load_data('test.csv')
-        
+
         self.assertIsInstance(result, pd.DataFrame)
         self.assertEqual(len(result), 3)
         mock_read_csv.assert_called_once_with('test.csv')
@@ -60,7 +60,7 @@ class TestDataLoading(unittest.TestCase):
     def test_load_data_file_not_found(self, mock_read_csv):
         """Test FileNotFoundError handling"""
         mock_read_csv.side_effect = FileNotFoundError("File not found")
-        
+
         with self.assertRaises(FileNotFoundError):
             load_data('nonexistent.csv')
 
@@ -68,14 +68,14 @@ class TestDataLoading(unittest.TestCase):
     def test_load_data_empty_file(self, mock_read_csv):
         """Test empty file handling"""
         mock_read_csv.side_effect = pd.errors.EmptyDataError("No data")
-        
+
         with self.assertRaises(pd.errors.EmptyDataError):
             load_data('empty.csv')
 
 
 class TestDataPreprocessing(unittest.TestCase):
     """Test data preprocessing functions"""
-    
+
     def setUp(self):
         """Set up test data for preprocessing tests"""
         self.sample_data = pd.DataFrame({
@@ -87,7 +87,7 @@ class TestDataPreprocessing(unittest.TestCase):
             'athlete_uid': [f'athlete_{i}' for i in range(10)],
             'extra_column': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         })
-        
+
         self.data_with_outliers = self.sample_data.copy()
         self.data_with_outliers.loc[len(self.data_with_outliers)] = {
             'pitch_speed_mph': 150.0,  # Extreme outlier
@@ -98,7 +98,7 @@ class TestDataPreprocessing(unittest.TestCase):
             'athlete_uid': 'outlier_athlete',
             'extra_column': 11
         }
-        
+
         self.data_with_nulls = self.sample_data.copy()
         self.data_with_nulls.loc[2, 'peak_velocity_x'] = np.nan
         self.data_with_nulls.loc[5, 'peak_acceleration_z'] = np.nan
@@ -106,13 +106,18 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_filter_columns_default(self):
         """Test column filtering with default parameters"""
         result = filter_columns(self.sample_data)
-        
-        expected_cols = {'peak_velocity_x', 'peak_velocity_y', 'peak_acceleration_z', 
-                        'pitch_speed_mph', 'test_date', 'athlete_uid'}
-        
+
+        expected_cols = {
+            'peak_velocity_x',
+            'peak_velocity_y',
+            'peak_acceleration_z',
+            'pitch_speed_mph',
+            'test_date',
+            'athlete_uid'}
+
         # Check that extra_column is NOT present
         self.assertNotIn('extra_column', result.columns)
-        
+
         # Check that all expected columns are present
         for col in expected_cols:
             self.assertIn(col, result.columns)
@@ -120,18 +125,21 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_filter_columns_custom(self):
         """Test column filtering with custom parameters"""
         result = filter_columns(
-            self.sample_data, 
-            include_patterns=['velocity'], 
+            self.sample_data,
+            include_patterns=['velocity'],
             additional_cols=['athlete_uid']
         )
-        
+
         expected_cols = {'peak_velocity_x', 'peak_velocity_y', 'athlete_uid'}
         self.assertEqual(set(result.columns), expected_cols)
 
     def test_remove_outliers_iqr(self):
         """Test outlier removal using IQR method"""
-        result = remove_outliers(self.data_with_outliers, 'pitch_speed_mph', method='iqr')
-        
+        result = remove_outliers(
+            self.data_with_outliers,
+            'pitch_speed_mph',
+            method='iqr')
+
         # The extreme outlier (150.0) should be removed
         self.assertLess(len(result), len(self.data_with_outliers))
         self.assertNotIn(150.0, result['pitch_speed_mph'].values)
@@ -144,12 +152,15 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_remove_outliers_invalid_method(self):
         """Test outlier removal with invalid method"""
         with self.assertRaises(ValueError):
-            remove_outliers(self.sample_data, 'pitch_speed_mph', method='invalid')
+            remove_outliers(
+                self.sample_data,
+                'pitch_speed_mph',
+                method='invalid')
 
     def test_handle_missing_values_mean(self):
         """Test handling missing values with mean strategy"""
         result = handle_missing_values(self.data_with_nulls, strategy='mean')
-        
+
         # Check that no nulls remain in numeric columns
         numeric_cols = result.select_dtypes(include=[np.number]).columns
         self.assertEqual(result[numeric_cols].isnull().sum().sum(), 0)
@@ -157,7 +168,7 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_handle_missing_values_drop(self):
         """Test handling missing values with drop strategy"""
         result = handle_missing_values(self.data_with_nulls, strategy='drop')
-        
+
         # Should have fewer rows after dropping nulls
         self.assertLess(len(result), len(self.data_with_nulls))
         self.assertEqual(result.isnull().sum().sum(), 0)
@@ -170,11 +181,14 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_prepare_features_target(self):
         """Test feature and target preparation"""
         X, y = prepare_features_target(self.sample_data)
-        
+
         # X should contain only float columns except target
-        expected_feature_cols = {'peak_velocity_x', 'peak_velocity_y', 'peak_acceleration_z'}
+        expected_feature_cols = {
+            'peak_velocity_x',
+            'peak_velocity_y',
+            'peak_acceleration_z'}
         self.assertEqual(set(X.columns), expected_feature_cols)
-        
+
         # y should be the target column
         self.assertEqual(y.name, 'pitch_speed_mph')
         self.assertEqual(len(y), len(self.sample_data))
@@ -182,23 +196,31 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_prepare_features_target_missing_target(self):
         """Test feature preparation with missing target column"""
         data_no_target = self.sample_data.drop('pitch_speed_mph', axis=1)
-        
+
         with self.assertRaises(ValueError):
             prepare_features_target(data_no_target)
 
     def test_split_and_scale_data(self):
         """Test data splitting and scaling"""
         X, y = prepare_features_target(self.sample_data)
-        X_train_scaled, X_test_scaled, y_train, y_test, scaler = split_and_scale_data(X, y)
-        
+        X_train_scaled, X_test_scaled, y_train, y_test, scaler = split_and_scale_data(
+            X, y)
+
         # Check shapes
         total_samples = len(X)
-        self.assertEqual(len(X_train_scaled) + len(X_test_scaled), total_samples)
+        self.assertEqual(
+            len(X_train_scaled) +
+            len(X_test_scaled),
+            total_samples)
         self.assertEqual(len(y_train) + len(y_test), total_samples)
-        
+
         # Check that test size is approximately 20%
-        self.assertAlmostEqual(len(X_test_scaled) / total_samples, 0.2, places=1)
-        
+        self.assertAlmostEqual(
+            len(X_test_scaled) /
+            total_samples,
+            0.2,
+            places=1)
+
         # Check that data is scaled (mean ≈ 0, std ≈ 1)
         self.assertAlmostEqual(np.mean(X_train_scaled), 0, places=1)
         self.assertAlmostEqual(np.std(X_train_scaled), 1, places=1)
@@ -206,7 +228,7 @@ class TestDataPreprocessing(unittest.TestCase):
 
 class TestModelTraining(unittest.TestCase):
     """Test model training functions"""
-    
+
     def setUp(self):
         """Set up test data for model training"""
         np.random.seed(42)
@@ -218,10 +240,10 @@ class TestModelTraining(unittest.TestCase):
     def test_train_linear_regression(self):
         """Test linear regression training"""
         model = train_linear_regression(self.X_train, self.y_train)
-        
+
         self.assertIsNotNone(model)
         self.assertTrue(hasattr(model, 'predict'))
-        
+
         # Test prediction
         predictions = model.predict(self.X_test)
         self.assertEqual(len(predictions), len(self.X_test))
@@ -229,21 +251,22 @@ class TestModelTraining(unittest.TestCase):
     def test_train_bayesian_ridge(self):
         """Test Bayesian Ridge training"""
         model = train_bayesian_ridge(self.X_train, self.y_train)
-        
+
         self.assertIsNotNone(model)
         self.assertTrue(hasattr(model, 'predict'))
-        
+
         # Test prediction
         predictions = model.predict(self.X_test)
         self.assertEqual(len(predictions), len(self.X_test))
 
     def test_train_random_forest(self):
         """Test Random Forest training"""
-        model = train_random_forest(self.X_train, self.y_train, n_estimators=10)
-        
+        model = train_random_forest(
+            self.X_train, self.y_train, n_estimators=10)
+
         self.assertIsNotNone(model)
         self.assertTrue(hasattr(model, 'predict'))
-        
+
         # Test prediction
         predictions = model.predict(self.X_test)
         self.assertEqual(len(predictions), len(self.X_test))
@@ -251,12 +274,12 @@ class TestModelTraining(unittest.TestCase):
     def test_evaluate_model(self):
         """Test model evaluation"""
         from sklearn.linear_model import LinearRegression
-        
+
         model = LinearRegression()
         model.fit(self.X_train, self.y_train)
-        
+
         result = evaluate_model(model, self.X_test, self.y_test, "Test Model")
-        
+
         self.assertIn('model_name', result)
         self.assertIn('mse', result)
         self.assertIn('r2', result)
@@ -268,7 +291,7 @@ class TestModelTraining(unittest.TestCase):
 
 class TestVisualization(unittest.TestCase):
     """Test visualization functions"""
-    
+
     def setUp(self):
         """Set up test data for visualization tests"""
         self.sample_data = pd.DataFrame({
@@ -305,9 +328,9 @@ class TestVisualization(unittest.TestCase):
             {'model_name': 'Model 1', 'mse': 25.0, 'r2': 0.75},
             {'model_name': 'Model 2', 'mse': 30.0, 'r2': 0.70}
         ]
-        
+
         result_df = create_results_dataframe(evaluation_results)
-        
+
         self.assertEqual(len(result_df), 2)
         self.assertIn('Model', result_df.columns)
         self.assertIn('Mean Squared Error', result_df.columns)
@@ -317,7 +340,7 @@ class TestVisualization(unittest.TestCase):
 
 class TestPipelineIntegration(unittest.TestCase):
     """Test full pipeline integration"""
-    
+
     def setUp(self):
         """Set up test data for pipeline tests"""
         # Create a temporary CSV file for testing
@@ -336,10 +359,10 @@ class TestPipelineIntegration(unittest.TestCase):
     def test_run_complete_pipeline(self, mock_load_data, mock_show):
         """Test the complete pipeline execution"""
         mock_load_data.return_value = self.test_data
-        
+
         # This should run without errors
         result = run_complete_pipeline('test.csv')
-        
+
         self.assertIsInstance(result, pd.DataFrame)
         self.assertEqual(len(result), 3)  # Should have 3 models
         self.assertIn('Model', result.columns)
@@ -348,7 +371,7 @@ class TestPipelineIntegration(unittest.TestCase):
 
 class TestEdgeCases(unittest.TestCase):
     """Test edge cases and error handling"""
-    
+
     def test_empty_dataframe_handling(self):
         """Test behavior with empty DataFrame"""
         empty_df = pd.DataFrame()
@@ -361,7 +384,7 @@ class TestEdgeCases(unittest.TestCase):
             'pitch_speed_mph': [90.0],
             'peak_velocity_x': [13.0]
         })
-        
+
         # Should handle single row gracefully
         result = remove_outliers(single_row_df, 'pitch_speed_mph')
         self.assertEqual(len(result), 1)
@@ -373,7 +396,7 @@ class TestEdgeCases(unittest.TestCase):
             'all_null_col': [np.nan, np.nan, np.nan],
             'peak_velocity_x': [1, 2, 3]
         })
-        
+
         result = handle_missing_values(data_with_null_col, strategy='mean')
         # All null column should remain null (mean of all NaN is NaN)
         self.assertTrue(result['all_null_col'].isnull().all())
@@ -384,7 +407,7 @@ class TestEdgeCases(unittest.TestCase):
             'name': ['Alice', 'Bob', 'Charlie'],
             'category': ['A', 'B', 'C']
         })
-        
+
         with self.assertRaises(ValueError):
             prepare_features_target(text_only_df)
 
@@ -393,45 +416,45 @@ if __name__ == '__main__':
     # Suppress excessive output during testing
     import warnings
     warnings.filterwarnings('ignore')
-    
+
     # Create test suite
     suite = unittest.TestSuite()
-    
+
     # Add all test classes
     test_classes = [
         TestDataLoading,
-        TestDataPreprocessing, 
+        TestDataPreprocessing,
         TestModelTraining,
         TestVisualization,
         TestPipelineIntegration,
         TestEdgeCases
     ]
-    
+
     for test_class in test_classes:
         suite.addTest(unittest.makeSuite(test_class))
-    
+
     # Run tests
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
-    
+
     # Print summary
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"TEST SUMMARY")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
-    
+
     if result.failures:
         print(f"\nFAILURES ({len(result.failures)}):")
         for test, failure in result.failures:
             print(f"  {test}: {failure.splitlines()[-1]}")
-    
+
     if result.errors:
         print(f"\nERRORS ({len(result.errors)}):")
         for test, error in result.errors:
             print(f"  {test}: {error.splitlines()[-1]}")
-    
+
     if not result.failures and not result.errors:
         print("\n✅ All tests passed!")
     else:
