@@ -1,5 +1,7 @@
 [![Test Pipeline](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml/badge.svg)](https://github.com/treychase/IDS_mini2/actions/workflows/ci.yml)
 
+![test_pass - 1](https://github.com/user-attachments/assets/80290e1a-bd0a-4a23-b839-b3433ee0dc8f)
+
 # Driveline Open Biomechanics Analysis
 
 # Baseball Pitch Speed Prediction using Biomechanics Data
