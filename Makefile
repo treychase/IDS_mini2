@@ -1,4 +1,4 @@
-.PHONY: help install run test test-verbose lint clean format check-deps setup
+.PHONY: help install run test test-verbose lint clean format format-check check-deps setup
 
 help:
 	@echo "Available targets:"
@@ -12,7 +12,8 @@ help:
 	@echo "  test-list       List available tests"
 	@echo "  test-specific   Run specific test (use TEST=TestName.test_method)"
 	@echo "  lint            Lint Python code with flake8"
-	@echo "  format          Format code with autopep8 (if available)"
+	@echo "  format          Format code with black"
+	@echo "  format-check    Check if code needs formatting (dry-run)"
 	@echo "  check-deps      Check if required dependencies are installed"
 	@echo "  clean           Remove Python cache files and temporary files"
 	@echo "  dev-setup       Complete development environment setup"
@@ -22,7 +23,7 @@ help:
 install:
 	@echo "Installing Python dependencies..."
 	pip3 install --user --upgrade pip
-	pip3 install --user -r requirements.txt || pip3 install --user pandas matplotlib scikit-learn scipy
+	pip3 install --user -r requirements.txt || pip3 install --user pandas matplotlib scikit-learn scipy black flake8 coverage
 
 setup: install check-deps
 	@echo "Development environment setup complete!"
@@ -49,15 +50,19 @@ test-coverage:
 lint:
 	@echo "Linting Python code..."
 	@which flake8 > /dev/null || (echo "Installing flake8..." && pip3 install --user flake8)
-	flake8 driveline.py --max-line-length=100 --ignore=E501,W503 || echo "Linting completed with warnings"
-	flake8 test_driveline.py --max-line-length=120 --ignore=E501,W503 || echo "Test linting completed with warnings"
+	flake8 driveline.py --max-line-length=100 --ignore=E501,W503,E203 || echo "Linting completed with warnings"
+	flake8 test_driveline.py --max-line-length=120 --ignore=E501,W503,E203 || echo "Test linting completed with warnings"
 
 format:
-	@echo "Formatting Python code..."
-	@which autopep8 > /dev/null || (echo "Installing autopep8..." && pip3 install --user autopep8)
-	autopep8 --in-place --aggressive --aggressive driveline.py
-	autopep8 --in-place --aggressive --aggressive test_driveline.py
+	@echo "Formatting Python code with black..."
+	@which black > /dev/null || (echo "Installing black..." && pip3 install --user black)
+	black driveline.py test_driveline.py
 	@echo "Code formatting complete!"
+
+format-check:
+	@echo "Checking code formatting with black (dry-run)..."
+	@which black > /dev/null || (echo "Installing black..." && pip3 install --user black)
+	black --check --diff driveline.py test_driveline.py
 
 check-deps:
 	@echo "Checking required dependencies..."
@@ -66,6 +71,7 @@ check-deps:
 	@python3 -c "import sklearn; print('✓ scikit-learn')" || echo "✗ scikit-learn (missing)"
 	@python3 -c "import numpy; print('✓ numpy')" || echo "✗ numpy (missing)"
 	@python3 -c "import scipy; print('✓ scipy')" || echo "✗ scipy (missing - needed for z-score outlier detection)"
+	@python3 -c "import black; print('✓ black')" || echo "✗ black (missing - needed for code formatting)"
 
 validate-data:
 	@echo "Validating data file exists..."
@@ -92,11 +98,11 @@ clean:
 dev-setup: setup test
 	@echo "Development setup complete and tests passing!"
 
-dev-check: lint test
+dev-check: lint format-check test
 	@echo "Development checks complete!"
 
 # CI/CD style checks
-ci: clean setup lint test
+ci: clean setup lint format-check test
 	@echo "CI pipeline complete!"
 
 # Help for specific commands
@@ -110,6 +116,7 @@ help-test:
 help-dev:
 	@echo "Development commands:"
 	@echo "  dev-setup    - Complete development environment setup"
-	@echo "  dev-check    - Run linting and tests"
-	@echo "  format       - Auto-format code"
-	@echo "  lint         - Check code style"
+	@echo "  dev-check    - Run linting, format check, and tests"
+	@echo "  format       - Auto-format code with black"
+	@echo "  format-check - Check if code needs formatting"
+	@echo "  lint         - Check code style with flake8"

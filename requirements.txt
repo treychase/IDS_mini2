@@ -8,6 +8,7 @@ scipy>=1.7.0
 # Development and testing
 flake8>=4.0.0
 coverage>=6.0.0
+black>=22.0.0
 
 
 
