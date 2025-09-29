@@ -104,11 +104,7 @@ def filter_columns(
         if col not in filtered_column_names:
             filtered_column_names.append(col)
 
-    print(
-        f"Selected {
-            len(filtered_column_names)} columns: {
-            sorted(filtered_column_names)}"
-    )
+    print(f"Selected {len(filtered_column_names)} columns: {sorted(filtered_column_names)}")
     return dataset[filtered_column_names]
 
 
@@ -213,11 +209,7 @@ def prepare_features_target(
     feature_matrix = dataset[float_column_names]
     target_vector = dataset[target_column_name]
 
-    print(
-        f"Prepared {
-            len(float_column_names)} features and {
-            len(target_vector)} target samples"
-    )
+    print(f"Prepared {len(float_column_names)} features and {len(target_vector)} target samples")
     return feature_matrix, target_vector
 
 
@@ -249,11 +241,7 @@ def split_and_scale_data(
     train_features_scaled = feature_scaler.fit_transform(train_features)
     test_features_scaled = feature_scaler.transform(test_features)
 
-    print(
-        f"Split data: {
-            len(train_features)} train, {
-            len(test_features)} test samples"
-    )
+    print(f"Split data: {len(train_features)} train, {len(test_features)} test samples")
     return train_features_scaled, test_features_scaled, train_targets, test_targets, feature_scaler
 
 
@@ -336,11 +324,7 @@ def evaluate_model(
     mean_squared_error_value = mean_squared_error(test_targets, predicted_values)
     r_squared_score = r2_score(test_targets, predicted_values)
 
-    print(
-        f"{model_display_name} - MSE: {
-            mean_squared_error_value:.2f}, R²: {
-            r_squared_score:.3f}"
-    )
+    print(f"{model_display_name} - MSE: {mean_squared_error_value:.2f}, R²: {r_squared_score:.3f}")
 
     return {
         "model_name": model_display_name,
@@ -657,10 +641,7 @@ def run_complete_pipeline(filepath: str = "hp_obp.csv") -> pd.DataFrame:
     best_r2_score = results_comparison_dataframe.loc[best_model_index, "R^2 Score"]
 
     print(f"\n=== Summary ===")
-    print(
-        f"Best performing model: {best_performing_model} (R² = {
-            best_r2_score:.3f})"
-    )
+    print(f"Best performing model: {best_performing_model} (R² = {best_r2_score:.3f})")
     print("All models show similar performance, suggesting the relationships")
     print("in the data are primarily linear. For production use, consider")
     print("the simplest model (Linear Regression) for cost efficiency.")
