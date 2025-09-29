@@ -104,7 +104,10 @@ def filter_columns(dataset: pd.DataFrame,
         if col not in filtered_column_names:
             filtered_column_names.append(col)
 
-    print(f"Selected {len(filtered_column_names)} columns: {sorted(filtered_column_names)}")
+    print(
+        f"Selected {
+            len(filtered_column_names)} columns: {
+            sorted(filtered_column_names)}")
     return dataset[filtered_column_names]
 
 
@@ -189,7 +192,7 @@ def handle_missing_values(dataset: pd.DataFrame,
 
 def prepare_features_target(dataset: pd.DataFrame,
                             target_column_name: str = 'pitch_speed_mph') -> Tuple[pd.DataFrame,
-                                                                             pd.Series]:
+                                                                                  pd.Series]:
     """
     Prepare features and target variable for machine learning.
 
@@ -201,17 +204,22 @@ def prepare_features_target(dataset: pd.DataFrame,
         Tuple[pd.DataFrame, pd.Series]: Features (X) and target (y)
     """
     if target_column_name not in dataset.columns:
-        raise ValueError(f"Target column '{target_column_name}' not found in data")
+        raise ValueError(
+            f"Target column '{target_column_name}' not found in data")
 
     # Select only float columns except target
-    float_column_names = dataset.select_dtypes(include='float').columns.tolist()
+    float_column_names = dataset.select_dtypes(
+        include='float').columns.tolist()
     if target_column_name in float_column_names:
         float_column_names.remove(target_column_name)
 
     feature_matrix = dataset[float_column_names]
     target_vector = dataset[target_column_name]
 
-    print(f"Prepared {len(float_column_names)} features and {len(target_vector)} target samples")
+    print(
+        f"Prepared {
+            len(float_column_names)} features and {
+            len(target_vector)} target samples")
     return feature_matrix, target_vector
 
 
@@ -219,10 +227,10 @@ def split_and_scale_data(feature_matrix: pd.DataFrame,
                          target_vector: pd.Series,
                          test_proportion: float = 0.2,
                          random_seed: int = 42) -> Tuple[np.ndarray,
-                                                          np.ndarray,
-                                                          pd.Series,
-                                                          pd.Series,
-                                                          StandardScaler]:
+                                                         np.ndarray,
+                                                         pd.Series,
+                                                         pd.Series,
+                                                         StandardScaler]:
     """
     Split data into train/test sets and scale features.
 
@@ -237,15 +245,17 @@ def split_and_scale_data(feature_matrix: pd.DataFrame,
     """
     # Split data
     train_features, test_features, train_targets, test_targets = train_test_split(
-        feature_matrix, target_vector, test_size=test_proportion, random_state=random_seed
-    )
+        feature_matrix, target_vector, test_size=test_proportion, random_state=random_seed)
 
     # Scale features
     feature_scaler = StandardScaler()
     train_features_scaled = feature_scaler.fit_transform(train_features)
     test_features_scaled = feature_scaler.transform(test_features)
 
-    print(f"Split data: {len(train_features)} train, {len(test_features)} test samples")
+    print(
+        f"Split data: {
+            len(train_features)} train, {
+            len(test_features)} test samples")
     return train_features_scaled, test_features_scaled, train_targets, test_targets, feature_scaler
 
 
@@ -309,8 +319,11 @@ def train_random_forest(train_features: np.ndarray,
     return forest_model
 
 
-def evaluate_model(trained_model, test_features: np.ndarray, test_targets: pd.Series,
-                   model_display_name: str) -> Dict[str, float]:
+def evaluate_model(trained_model,
+                   test_features: np.ndarray,
+                   test_targets: pd.Series,
+                   model_display_name: str) -> Dict[str,
+                                                    float]:
     """
     Evaluate a trained model and return metrics.
 
@@ -324,10 +337,14 @@ def evaluate_model(trained_model, test_features: np.ndarray, test_targets: pd.Se
         Dict[str, float]: Dictionary with MSE and R² scores
     """
     predicted_values = trained_model.predict(test_features)
-    mean_squared_error_value = mean_squared_error(test_targets, predicted_values)
+    mean_squared_error_value = mean_squared_error(
+        test_targets, predicted_values)
     r_squared_score = r2_score(test_targets, predicted_values)
 
-    print(f"{model_display_name} - MSE: {mean_squared_error_value:.2f}, R²: {r_squared_score:.3f}")
+    print(
+        f"{model_display_name} - MSE: {
+            mean_squared_error_value:.2f}, R²: {
+            r_squared_score:.3f}")
 
     return {
         'model_name': model_display_name,
@@ -337,10 +354,11 @@ def evaluate_model(trained_model, test_features: np.ndarray, test_targets: pd.Se
     }
 
 
-def plot_pitch_speed_histogram(dataset: pd.DataFrame,
-                               speed_column: str = 'pitch_speed_mph',
-                               plot_title: str = "Histogram of Pitch Speed (mph)",
-                               save_path: Optional[str] = None) -> None:
+def plot_pitch_speed_histogram(
+        dataset: pd.DataFrame,
+        speed_column: str = 'pitch_speed_mph',
+        plot_title: str = "Histogram of Pitch Speed (mph)",
+        save_path: Optional[str] = None) -> None:
     """
     Plot histogram of pitch speed data.
 
@@ -351,7 +369,11 @@ def plot_pitch_speed_histogram(dataset: pd.DataFrame,
         save_path (Optional[str]): Path to save the plot
     """
     plt.figure(figsize=(8, 6))
-    plt.hist(dataset[speed_column], bins=30, color='skyblue', edgecolor='black')
+    plt.hist(
+        dataset[speed_column],
+        bins=30,
+        color='skyblue',
+        edgecolor='black')
     plt.xlabel("Pitch Speed (mph)")
     plt.ylabel("Frequency")
     plt.title(plot_title)
@@ -383,7 +405,11 @@ def plot_actual_vs_predicted(actual_targets: pd.Series,
         save_path (Optional[str]): Path to save the plot
     """
     plt.figure(figsize=(8, 6))
-    plt.scatter(actual_targets, predicted_values, alpha=0.7, color=scatter_color)
+    plt.scatter(
+        actual_targets,
+        predicted_values,
+        alpha=0.7,
+        color=scatter_color)
     plt.xlabel("Actual Pitch Speed (mph)")
     plt.ylabel("Predicted Pitch Speed (mph)")
     plt.title(f"{model_display_name}: Actual vs. Predicted Pitch Speed")
@@ -430,11 +456,16 @@ def plot_model_comparison(actual_targets: pd.Series,
     for model_name, predicted_values in model_predictions_dict.items():
         plot_color = color_mapping.get(model_name, 'black')
         plot_marker = marker_mapping.get(model_name, 'o')
-        plt.scatter(actual_targets, predicted_values, alpha=0.6, label=model_name,
-                    color=plot_color, marker=plot_marker)
+        plt.scatter(
+            actual_targets,
+            predicted_values,
+            alpha=0.6,
+            label=model_name,
+            color=plot_color,
+            marker=plot_marker)
 
-    plt.plot([actual_targets.min(), actual_targets.max()], [actual_targets.min(), actual_targets.max()],
-             'r--', label='1:1 Line')
+    plt.plot([actual_targets.min(), actual_targets.max()], [
+             actual_targets.min(), actual_targets.max()], 'r--', label='1:1 Line')
     plt.xlabel("Actual Pitch Speed (mph)")
     plt.ylabel("Predicted Pitch Speed (mph)")
     plt.title("Actual vs. Predicted Pitch Speed: Model Comparison")
@@ -445,7 +476,8 @@ def plot_model_comparison(actual_targets: pd.Series,
     plt.show()
 
 
-def create_results_dataframe(evaluation_results_list: List[Dict]) -> pd.DataFrame:
+def create_results_dataframe(
+        evaluation_results_list: List[Dict]) -> pd.DataFrame:
     """
     Create a comparison DataFrame from model evaluation results.
 
@@ -477,11 +509,14 @@ def train_all_models(train_features_scaled: np.ndarray,
         Dict[str, any]: Dictionary containing all trained models
     """
     print("\nTraining models...")
-    
-    linear_regression_model = train_linear_regression(train_features_scaled, train_targets)
-    bayesian_ridge_model = train_bayesian_ridge(train_features_scaled, train_targets)
-    random_forest_model = train_random_forest(train_features_scaled, train_targets)
-    
+
+    linear_regression_model = train_linear_regression(
+        train_features_scaled, train_targets)
+    bayesian_ridge_model = train_bayesian_ridge(
+        train_features_scaled, train_targets)
+    random_forest_model = train_random_forest(
+        train_features_scaled, train_targets)
+
     return {
         'linear_regression': linear_regression_model,
         'bayesian_ridge': bayesian_ridge_model,
@@ -490,8 +525,8 @@ def train_all_models(train_features_scaled: np.ndarray,
 
 
 def evaluate_all_models(trained_models_dict: Dict[str, any],
-                       test_features_scaled: np.ndarray,
-                       test_targets: pd.Series) -> List[Dict]:
+                        test_features_scaled: np.ndarray,
+                        test_targets: pd.Series) -> List[Dict]:
     """
     Evaluate all trained models.
 
@@ -504,26 +539,29 @@ def evaluate_all_models(trained_models_dict: Dict[str, any],
         List[Dict]: List of evaluation results for all models
     """
     print("\nEvaluating models...")
-    
+
     linear_regression_results = evaluate_model(
         trained_models_dict['linear_regression'],
         test_features_scaled,
         test_targets,
         "Linear Regression")
-    
+
     bayesian_ridge_results = evaluate_model(
         trained_models_dict['bayesian_ridge'],
         test_features_scaled,
         test_targets,
         "Bayesian Ridge")
-    
+
     random_forest_results = evaluate_model(
         trained_models_dict['random_forest'],
         test_features_scaled,
         test_targets,
         "Random Forest")
-    
-    return [linear_regression_results, bayesian_ridge_results, random_forest_results]
+
+    return [
+        linear_regression_results,
+        bayesian_ridge_results,
+        random_forest_results]
 
 
 def create_model_visualizations(test_targets: pd.Series,
@@ -536,20 +574,20 @@ def create_model_visualizations(test_targets: pd.Series,
         evaluation_results_list (List[Dict]): List of evaluation results
     """
     print("\nCreating model comparison plots...")
-    
+
     # Individual model plots
     plot_actual_vs_predicted(
         test_targets,
         evaluation_results_list[0]['predictions'],
         "Linear Regression",
         'blue')
-    
+
     plot_actual_vs_predicted(
         test_targets,
         evaluation_results_list[1]['predictions'],
         "Bayesian Ridge",
         'purple')
-    
+
     plot_actual_vs_predicted(
         test_targets,
         evaluation_results_list[2]['predictions'],
@@ -599,17 +637,20 @@ def run_complete_pipeline(filepath: str = 'hp_obp.csv') -> pd.DataFrame:
 
     # Step 4: Prepare data for ML
     print("\nStep 5: Preparing features and target...")
-    feature_matrix, target_vector = prepare_features_target(preprocessed_dataset)
+    feature_matrix, target_vector = prepare_features_target(
+        preprocessed_dataset)
     train_features_scaled, test_features_scaled, train_targets, test_targets, feature_scaler = split_and_scale_data(
         feature_matrix, target_vector)
 
     # Step 5: Train all models
     print("\nStep 6: Training models...")
-    trained_models_dict = train_all_models(train_features_scaled, train_targets)
+    trained_models_dict = train_all_models(
+        train_features_scaled, train_targets)
 
     # Step 6: Evaluate all models
     print("\nStep 7: Evaluating models...")
-    evaluation_results_list = evaluate_all_models(trained_models_dict, test_features_scaled, test_targets)
+    evaluation_results_list = evaluate_all_models(
+        trained_models_dict, test_features_scaled, test_targets)
 
     # Step 7: Create visualizations
     print("\nStep 8: Creating model comparison plots...")
@@ -617,7 +658,8 @@ def run_complete_pipeline(filepath: str = 'hp_obp.csv') -> pd.DataFrame:
 
     # Step 8: Create results summary
     print("\nStep 9: Creating results summary...")
-    results_comparison_dataframe = create_results_dataframe(evaluation_results_list)
+    results_comparison_dataframe = create_results_dataframe(
+        evaluation_results_list)
     print("\n=== Model Comparison Results ===")
     print(results_comparison_dataframe)
 
@@ -627,7 +669,9 @@ def run_complete_pipeline(filepath: str = 'hp_obp.csv') -> pd.DataFrame:
     best_r2_score = results_comparison_dataframe.loc[best_model_index, 'R^2 Score']
 
     print(f"\n=== Summary ===")
-    print(f"Best performing model: {best_performing_model} (R² = {best_r2_score:.3f})")
+    print(
+        f"Best performing model: {best_performing_model} (R² = {
+            best_r2_score:.3f})")
     print("All models show similar performance, suggesting the relationships")
     print("in the data are primarily linear. For production use, consider")
     print("the simplest model (Linear Regression) for cost efficiency.")

@@ -160,8 +160,11 @@ class TestDataPreprocessing(unittest.TestCase):
 
     def test_handle_missing_values_mean(self):
         """Test handling missing values with mean strategy"""
-        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
-        result = handle_missing_values(self.data_with_nulls, imputation_strategy='mean')
+        # FIXED: Changed parameter name from 'strategy' to
+        # 'imputation_strategy'
+        result = handle_missing_values(
+            self.data_with_nulls,
+            imputation_strategy='mean')
 
         # Check that no nulls remain in numeric columns
         numeric_cols = result.select_dtypes(include=[np.number]).columns
@@ -169,8 +172,11 @@ class TestDataPreprocessing(unittest.TestCase):
 
     def test_handle_missing_values_drop(self):
         """Test handling missing values with drop strategy"""
-        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
-        result = handle_missing_values(self.data_with_nulls, imputation_strategy='drop')
+        # FIXED: Changed parameter name from 'strategy' to
+        # 'imputation_strategy'
+        result = handle_missing_values(
+            self.data_with_nulls,
+            imputation_strategy='drop')
 
         # Should have fewer rows after dropping nulls
         self.assertLess(len(result), len(self.data_with_nulls))
@@ -179,8 +185,11 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_handle_missing_values_invalid_strategy(self):
         """Test handling missing values with invalid strategy"""
         with self.assertRaises(ValueError):
-            # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
-            handle_missing_values(self.data_with_nulls, imputation_strategy='invalid')
+            # FIXED: Changed parameter name from 'strategy' to
+            # 'imputation_strategy'
+            handle_missing_values(
+                self.data_with_nulls,
+                imputation_strategy='invalid')
 
     def test_prepare_features_target(self):
         """Test feature and target preparation"""
@@ -266,7 +275,8 @@ class TestModelTraining(unittest.TestCase):
 
     def test_train_random_forest(self):
         """Test Random Forest training"""
-        # FIXED: Changed parameter name from 'n_estimators' to 'number_of_trees'
+        # FIXED: Changed parameter name from 'n_estimators' to
+        # 'number_of_trees'
         model = train_random_forest(
             self.X_train, self.y_train, number_of_trees=10)
 
@@ -314,7 +324,8 @@ class TestModelTraining(unittest.TestCase):
         models_dict = train_all_models(self.X_train, self.y_train)
 
         # Then evaluate them
-        results_list = evaluate_all_models(models_dict, self.X_test, self.y_test)
+        results_list = evaluate_all_models(
+            models_dict, self.X_test, self.y_test)
 
         # Check that we have results for all 3 models
         self.assertEqual(len(results_list), 3)
@@ -449,8 +460,10 @@ class TestEdgeCases(unittest.TestCase):
             'peak_velocity_x': [1, 2, 3]
         })
 
-        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
-        result = handle_missing_values(data_with_null_col, imputation_strategy='mean')
+        # FIXED: Changed parameter name from 'strategy' to
+        # 'imputation_strategy'
+        result = handle_missing_values(
+            data_with_null_col, imputation_strategy='mean')
         # All null column should remain null (mean of all NaN is NaN)
         self.assertTrue(result['all_null_col'].isnull().all())
 
