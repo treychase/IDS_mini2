@@ -24,7 +24,8 @@ try:
         handle_missing_values, prepare_features_target, split_and_scale_data,
         train_linear_regression, train_bayesian_ridge, train_random_forest,
         evaluate_model, plot_pitch_speed_histogram, plot_actual_vs_predicted,
-        plot_model_comparison, create_results_dataframe, run_complete_pipeline
+        plot_model_comparison, create_results_dataframe, run_complete_pipeline,
+        train_all_models, evaluate_all_models, create_model_visualizations
     )
 except ImportError as e:
     print(f"Could not import driveline functions: {e}")
@@ -127,7 +128,7 @@ class TestDataPreprocessing(unittest.TestCase):
         result = filter_columns(
             self.sample_data,
             include_patterns=['velocity'],
-            additional_cols=['athlete_uid']
+            additional_columns=['athlete_uid']
         )
 
         expected_cols = {'peak_velocity_x', 'peak_velocity_y', 'athlete_uid'}
@@ -159,7 +160,8 @@ class TestDataPreprocessing(unittest.TestCase):
 
     def test_handle_missing_values_mean(self):
         """Test handling missing values with mean strategy"""
-        result = handle_missing_values(self.data_with_nulls, strategy='mean')
+        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
+        result = handle_missing_values(self.data_with_nulls, imputation_strategy='mean')
 
         # Check that no nulls remain in numeric columns
         numeric_cols = result.select_dtypes(include=[np.number]).columns
@@ -167,7 +169,8 @@ class TestDataPreprocessing(unittest.TestCase):
 
     def test_handle_missing_values_drop(self):
         """Test handling missing values with drop strategy"""
-        result = handle_missing_values(self.data_with_nulls, strategy='drop')
+        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
+        result = handle_missing_values(self.data_with_nulls, imputation_strategy='drop')
 
         # Should have fewer rows after dropping nulls
         self.assertLess(len(result), len(self.data_with_nulls))
@@ -176,7 +179,8 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_handle_missing_values_invalid_strategy(self):
         """Test handling missing values with invalid strategy"""
         with self.assertRaises(ValueError):
-            handle_missing_values(self.data_with_nulls, strategy='invalid')
+            # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
+            handle_missing_values(self.data_with_nulls, imputation_strategy='invalid')
 
     def test_prepare_features_target(self):
         """Test feature and target preparation"""
@@ -203,27 +207,28 @@ class TestDataPreprocessing(unittest.TestCase):
     def test_split_and_scale_data(self):
         """Test data splitting and scaling"""
         X, y = prepare_features_target(self.sample_data)
-        X_train_scaled, X_test_scaled, y_train, y_test, scaler = split_and_scale_data(
+        # FIXED: Changed variable names to match refactored code
+        train_features_scaled, test_features_scaled, train_targets, test_targets, feature_scaler = split_and_scale_data(
             X, y)
 
         # Check shapes
         total_samples = len(X)
         self.assertEqual(
-            len(X_train_scaled) +
-            len(X_test_scaled),
+            len(train_features_scaled) +
+            len(test_features_scaled),
             total_samples)
-        self.assertEqual(len(y_train) + len(y_test), total_samples)
+        self.assertEqual(len(train_targets) + len(test_targets), total_samples)
 
         # Check that test size is approximately 20%
         self.assertAlmostEqual(
-            len(X_test_scaled) /
+            len(test_features_scaled) /
             total_samples,
             0.2,
             places=1)
 
         # Check that data is scaled (mean ≈ 0, std ≈ 1)
-        self.assertAlmostEqual(np.mean(X_train_scaled), 0, places=1)
-        self.assertAlmostEqual(np.std(X_train_scaled), 1, places=1)
+        self.assertAlmostEqual(np.mean(train_features_scaled), 0, places=1)
+        self.assertAlmostEqual(np.std(train_features_scaled), 1, places=1)
 
 
 class TestModelTraining(unittest.TestCase):
@@ -261,8 +266,9 @@ class TestModelTraining(unittest.TestCase):
 
     def test_train_random_forest(self):
         """Test Random Forest training"""
+        # FIXED: Changed parameter name from 'n_estimators' to 'number_of_trees'
         model = train_random_forest(
-            self.X_train, self.y_train, n_estimators=10)
+            self.X_train, self.y_train, number_of_trees=10)
 
         self.assertIsNotNone(model)
         self.assertTrue(hasattr(model, 'predict'))
@@ -287,6 +293,38 @@ class TestModelTraining(unittest.TestCase):
         self.assertEqual(result['model_name'], "Test Model")
         self.assertGreaterEqual(result['mse'], 0)
         self.assertLessEqual(result['r2'], 1.0)
+
+    def test_train_all_models(self):
+        """Test training all models at once"""
+        models_dict = train_all_models(self.X_train, self.y_train)
+
+        # Check that all models are returned
+        self.assertIn('linear_regression', models_dict)
+        self.assertIn('bayesian_ridge', models_dict)
+        self.assertIn('random_forest', models_dict)
+
+        # Check that all models can make predictions
+        for model_name, model in models_dict.items():
+            predictions = model.predict(self.X_test)
+            self.assertEqual(len(predictions), len(self.X_test))
+
+    def test_evaluate_all_models(self):
+        """Test evaluating all models at once"""
+        # First train all models
+        models_dict = train_all_models(self.X_train, self.y_train)
+
+        # Then evaluate them
+        results_list = evaluate_all_models(models_dict, self.X_test, self.y_test)
+
+        # Check that we have results for all 3 models
+        self.assertEqual(len(results_list), 3)
+
+        # Check that each result has required keys
+        for result in results_list:
+            self.assertIn('model_name', result)
+            self.assertIn('mse', result)
+            self.assertIn('r2', result)
+            self.assertIn('predictions', result)
 
 
 class TestVisualization(unittest.TestCase):
@@ -321,6 +359,20 @@ class TestVisualization(unittest.TestCase):
         }
         plot_model_comparison(self.y_test, predictions_dict)
         mock_show.assert_called_once()
+
+    @patch('matplotlib.pyplot.show')
+    def test_create_model_visualizations(self, mock_show):
+        """Test creating all model visualizations"""
+        evaluation_results = [
+            {'model_name': 'Linear Regression', 'mse': 25.0, 'r2': 0.75, 'predictions': self.y_pred},
+            {'model_name': 'Bayesian Ridge', 'mse': 26.0, 'r2': 0.74, 'predictions': self.y_pred},
+            {'model_name': 'Random Forest', 'mse': 24.0, 'r2': 0.76, 'predictions': self.y_pred}
+        ]
+
+        create_model_visualizations(self.y_test, evaluation_results)
+
+        # Should be called 4 times (3 individual plots + 1 comparison plot)
+        self.assertEqual(mock_show.call_count, 4)
 
     def test_create_results_dataframe(self):
         """Test results DataFrame creation"""
@@ -397,7 +449,8 @@ class TestEdgeCases(unittest.TestCase):
             'peak_velocity_x': [1, 2, 3]
         })
 
-        result = handle_missing_values(data_with_null_col, strategy='mean')
+        # FIXED: Changed parameter name from 'strategy' to 'imputation_strategy'
+        result = handle_missing_values(data_with_null_col, imputation_strategy='mean')
         # All null column should remain null (mean of all NaN is NaN)
         self.assertTrue(result['all_null_col'].isnull().all())
 
